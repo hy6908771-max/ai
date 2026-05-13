@@ -7,25 +7,49 @@
     <style>
         /* Premium Dark Theme */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
-        body { background-color: #0b141a; display: flex; justify-content: center; align-items: center; height: 100vh; color: #e9edef; }
-        .chat-container { width: 100%; max-width: 450px; height: 95vh; background: #111b21; display: flex; flex-direction: column; border-radius: 15px; overflow: hidden; box-shadow: 0 15px 50px rgba(0,0,0,0.7); border: 1px solid #222e35; }
+        body { background-color: #0b141a; display: flex; justify-content: center; align-items: center; height: 100vh; color: #e9edef; overflow: hidden; }
+        
+        .chat-container { width: 100%; max-width: 450px; height: 95vh; background: #111b21; display: flex; flex-direction: column; border-radius: 15px; overflow: hidden; box-shadow: 0 15px 50px rgba(0,0,0,0.7); border: 1px solid #222e35; position: relative; }
+        
+        /* Header */
         .header { background: #202c33; padding: 15px 18px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #2d3941; }
         .header img { width: 45px; height: 45px; border-radius: 50%; border: 2px solid #00a884; background: #fff; }
         .header-text p { font-weight: 600; font-size: 18px; color: #fff; }
-        .header-text span { font-size: 12px; color: #00ff88; display: block; margin-top: -2px; }
+        .header-text span { font-size: 12px; color: #00ff88; display: block; }
+
+        /* Chat Box */
         #chat-box { flex: 1; padding: 20px; overflow-y: auto; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); display: flex; flex-direction: column; gap: 12px; }
-        .msg { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 14.5px; line-height: 1.5; position: relative; }
-        .user { align-self: flex-end; background: #005c4b; border-top-right-radius: 0; color: #fff; }
-        .bot { align-self: flex-start; background: #202c33; border-top-left-radius: 0; color: #e9edef; }
+        
+        .msg { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 14.5px; line-height: 1.5; position: relative; word-wrap: break-word; }
+        .user { align-self: flex-end; background: #005c4b; color: #fff; border-top-right-radius: 0; }
+        .bot { align-self: flex-start; background: #202c33; color: #e9edef; border-top-left-radius: 0; border: 1px solid #2d3941; }
+        
         .time { font-size: 10px; opacity: 0.5; display: block; text-align: right; margin-top: 5px; }
+
+        /* Input Area */
         .input-area { padding: 15px; background: #202c33; display: flex; align-items: center; gap: 10px; }
         input { flex: 1; padding: 12px 18px; border-radius: 30px; border: none; background: #2a3942; color: #d1d7db; outline: none; font-size: 15px; }
+        
         button { background: #00a884; border: none; width: 48px; height: 48px; border-radius: 50%; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+        /* Training Overlay (Secret) */
+        #admin-panel { display: none; position: absolute; top: 60px; left: 20px; right: 20px; background: #202c33; padding: 20px; border-radius: 12px; border: 2px solid #00a884; z-index: 100; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        #admin-panel textarea { width: 100%; height: 80px; background: #2a3942; border: 1px solid #00a884; color: white; padding: 10px; border-radius: 8px; outline: none; margin-bottom: 10px; }
+        .admin-btn { background: #00a884; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; }
     </style>
 </head>
 <body>
 
+<audio id="type-sound" src="https://www.soundjay.com/communication/typewriter-key-1.mp3" preload="auto"></audio>
+
 <div class="chat-container">
+    <!-- Admin Panel (Secret) -->
+    <div id="admin-panel">
+        <p style="font-size: 12px; margin-bottom: 8px; color: #00ff88;">AI-কে নতুন কিছু শিখান:</p>
+        <textarea id="training-data" placeholder="যেমন: নতুন অফার বা নিয়ম লিখুন..."></textarea>
+        <button class="admin-btn" onclick="saveTraining()">শিখানো সম্পন্ন করুন</button>
+    </div>
+
     <div class="header">
         <img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" alt="Bot Logo">
         <div class="header-text">
@@ -33,11 +57,11 @@
             <span>Online</span>
         </div>
     </div>
-    <div id="chat-box">
-        <div class="msg bot">আসসালামু আলাইকুম! আমি <b>Flexi Server Lab</b>-এর স্মার্ট AI। আপনাকে কীভাবে সাহায্য করতে পারি?</div>
-    </div>
+    
+    <div id="chat-box"></div>
+    
     <div class="input-area">
-        <input type="text" id="user-input" placeholder="আপনার প্রশ্নটি লিখুন..." onkeypress="if(event.key==='Enter') sendMessage()">
+        <input type="text" id="user-input" placeholder="আপনার প্রশ্নটি লিখুন..." autocomplete="off" onkeypress="if(event.key==='Enter') sendMessage()">
         <button onclick="sendMessage()">
             <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
         </button>
@@ -45,50 +69,103 @@
 </div>
 
 <script>
-    // আপনার সঠিক এপিআই কী
     const API_KEY = "AIzaSyCIof-LSXGOjbgv4RAKD-l1HgI_1T5lNtM"; 
-    // আপনার লিস্টে পাওয়া লেটেস্ট মডেল ইউআরএল
     const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${API_KEY}`;
+    const sound = document.getElementById('type-sound');
+
+    // মূল তথ্য (Primary Knowledge)
+    let companyInfo = `
+    কোম্পানি: Flexi Server Lab.
+    মালিক: মোঃ আশরাফুল ইসলাম আরিফ.
+    ঠিকানা: কাটগড় পতেঙ্গা চট্টগ্রাম.
+    ফোন/হোয়াটসঅ্যাপ: 01322477189.
+    সেবা: অটো ও ম্যানুয়াল টেলিকম সার্ভার সেল করা হয়.`;
+
+    let additionalTraining = ""; // আপনি যা শিখাবেন তা এখানে জমা হবে
+
+    window.onload = () => {
+        typeWriter("আসসালামু আলাইকুম! Flexi Server Lab-এ স্বাগতম। আমি আপনাকে কীভাবে সাহায্য করতে পারি?", 'bot');
+    };
 
     async function sendMessage() {
         const input = document.getElementById('user-input');
         const text = input.value.trim();
         if (!text) return;
 
+        // সিক্রেট কোড চেক (Admin123 লিখলে প্যানেল খুলবে)
+        if (text.toLowerCase() === "admin123") {
+            document.getElementById('admin-panel').style.display = 'block';
+            input.value = '';
+            return;
+        }
+
         appendMsg(text, 'user');
         input.value = '';
-        const loading = appendMsg("Flexi AI লিখছে...", 'bot');
+        
+        const loadingDiv = appendMsg("Flexi AI লিখছে...", 'bot');
 
         try {
+            const systemPrompt = `তুমি Flexi Server Lab-এর সহকারী। ${companyInfo} ${additionalTraining} সব উত্তর বাংলায় দিবে। উত্তর খুব বড় করবে না।`;
+            
             const response = await fetch(API_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    contents: [{ parts: [{ text: "তুমি Flexi Server Lab-এর সহকারী। সব উত্তর বাংলায় দাও: " + text }] }]
+                    contents: [{ parts: [{ text: systemPrompt + "\nপ্রশ্ন: " + text }] }]
                 })
             });
 
             const data = await response.json();
-            
+            loadingDiv.remove();
+
             if (data.candidates && data.candidates[0].content) {
-                loading.innerHTML = data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>') + `<span class="time">${getCurrentTime()}</span>`;
-            } else if (data.error) {
-                loading.innerText = "Error: " + data.error.message;
+                typeWriter(data.candidates[0].content.parts[0].text, 'bot');
             } else {
-                loading.innerText = "দুঃখিত, উত্তর পাওয়া যাচ্ছে না।";
+                typeWriter("দুঃখিত, আবার চেষ্টা করুন।", 'bot');
             }
         } catch (e) {
-            loading.innerText = "সার্ভার কানেকশন এরর!";
+            loadingDiv.innerText = "ইন্টারনেট এরর!";
         }
+    }
+
+    function saveTraining() {
+        const data = document.getElementById('training-data').value;
+        if (data) {
+            additionalTraining += "\nনতুন তথ্য: " + data;
+            alert("এআই-কে শিখানো হয়েছে!");
+            document.getElementById('training-data').value = '';
+            document.getElementById('admin-panel').style.display = 'none';
+        }
+    }
+
+    function typeWriter(text, sender) {
+        const chatBox = document.getElementById('chat-box');
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `msg ${sender}`;
+        chatBox.appendChild(msgDiv);
+        
+        let i = 0;
+        function type() {
+            if (i < text.length) {
+                msgDiv.innerHTML = text.substring(0, i+1).replace(/\n/g, '<br>');
+                sound.currentTime = 0;
+                sound.play().catch(() => {});
+                i++;
+                chatBox.scrollTop = chatBox.scrollHeight;
+                setTimeout(type, 30);
+            } else {
+                msgDiv.innerHTML += `<span class="time">${getCurrentTime()}</span>`;
+            }
+        }
+        type();
     }
 
     function appendMsg(t, s) {
         const d = document.createElement('div');
         d.className = `msg ${s}`;
-        d.innerHTML = t + (s === 'bot' ? '' : `<span class="time">${getCurrentTime()}</span>`);
-        const b = document.getElementById('chat-box');
-        b.appendChild(d);
-        b.scrollTop = b.scrollHeight;
+        d.innerHTML = t + (s === 'user' ? `<span class="time">${getCurrentTime()}</span>` : '');
+        document.getElementById('chat-box').appendChild(d);
+        document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
         return d;
     }
 
