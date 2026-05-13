@@ -40,6 +40,7 @@
 </head>
 <body>
 
+<!-- টাইপিং সাউন্ড অডিও -->
 <audio id="type-sound" src="https://www.soundjay.com/communication/typewriter-key-1.mp3" preload="auto"></audio>
 
 <div class="chat-container">
@@ -73,26 +74,46 @@
     const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${API_KEY}`;
     const sound = document.getElementById('type-sound');
 
-    // মূল তথ্য (Primary Knowledge)
+    // অডিও আনলক করার লজিক
+    let audioUnlocked = false;
+    function unlockAudio() {
+        if (!audioUnlocked) {
+            sound.play().then(() => {
+                sound.pause();
+                sound.currentTime = 0;
+                audioUnlocked = true;
+            }).catch(e => console.log("সাউন্ড আনলক করার জন্য স্ক্রিনে ক্লিক করুন"));
+        }
+    }
+
+    // ইউজার প্রথমবার কোথাও ক্লিক বা টাচ করলে সাউন্ড আনলক হবে
+    document.addEventListener('click', unlockAudio, { once: true });
+    document.addEventListener('touchstart', unlockAudio, { once: true });
+
+    // মূল কোম্পানির তথ্য
     let companyInfo = `
     কোম্পানি: Flexi Server Lab.
     মালিক: মোঃ আশরাফুল ইসলাম আরিফ.
     ঠিকানা: কাটগড় পতেঙ্গা চট্টগ্রাম.
     ফোন/হোয়াটসঅ্যাপ: 01322477189.
-    সেবা: অটো ও ম্যানুয়াল টেলিকম সার্ভার সেল করা হয়.`;
+    সেবা: আমাদের এখানে অটো ও ম্যানুয়াল টেলিকম সার্ভার সেল করা হয়।`;
 
-    let additionalTraining = ""; // আপনি যা শিখাবেন তা এখানে জমা হবে
+    let additionalTraining = ""; 
 
     window.onload = () => {
-        typeWriter("আসসালামু আলাইকুম! Flexi Server Lab-এ স্বাগতম। আমি আপনাকে কীভাবে সাহায্য করতে পারি?", 'bot');
+        // ছোট ডিলের পর প্রথম মেসেজ
+        setTimeout(() => {
+            typeWriter("আসসালামু আলাইকুম! Flexi Server Lab-এ স্বাগতম। আমি আপনাকে কীভাবে সাহায্য করতে পারি?", 'bot');
+        }, 1000);
     };
 
     async function sendMessage() {
+        unlockAudio(); // মেসেজ পাঠানোর সময়ও আনলক চেক করবে
         const input = document.getElementById('user-input');
         const text = input.value.trim();
         if (!text) return;
 
-        // সিক্রেট কোড চেক (Admin123 লিখলে প্যানেল খুলবে)
+        // "admin123" লিখলে ট্রেনিং প্যানেল আসবে
         if (text.toLowerCase() === "admin123") {
             document.getElementById('admin-panel').style.display = 'block';
             input.value = '';
@@ -105,7 +126,7 @@
         const loadingDiv = appendMsg("Flexi AI লিখছে...", 'bot');
 
         try {
-            const systemPrompt = `তুমি Flexi Server Lab-এর সহকারী। ${companyInfo} ${additionalTraining} সব উত্তর বাংলায় দিবে। উত্তর খুব বড় করবে না।`;
+            const systemPrompt = `তুমি Flexi Server Lab-এর সহকারী। তোমার নাম Flexi AI। ${companyInfo} ${additionalTraining} সব উত্তর বাংলায় দিবে। উত্তর খুব বড় করবে না।`;
             
             const response = await fetch(API_URL, {
                 method: "POST",
@@ -121,7 +142,7 @@
             if (data.candidates && data.candidates[0].content) {
                 typeWriter(data.candidates[0].content.parts[0].text, 'bot');
             } else {
-                typeWriter("দুঃখিত, আবার চেষ্টা করুন।", 'bot');
+                typeWriter("দুঃখিত, আমি বুঝতে পারিনি। দয়া করে আবার চেষ্টা করুন।", 'bot');
             }
         } catch (e) {
             loadingDiv.innerText = "ইন্টারনেট এরর!";
@@ -132,7 +153,7 @@
         const data = document.getElementById('training-data').value;
         if (data) {
             additionalTraining += "\nনতুন তথ্য: " + data;
-            alert("এআই-কে শিখানো হয়েছে!");
+            alert("এআই-কে নতুন তথ্য শিখানো হয়েছে!");
             document.getElementById('training-data').value = '';
             document.getElementById('admin-panel').style.display = 'none';
         }
@@ -148,11 +169,16 @@
         function type() {
             if (i < text.length) {
                 msgDiv.innerHTML = text.substring(0, i+1).replace(/\n/g, '<br>');
-                sound.currentTime = 0;
-                sound.play().catch(() => {});
+                
+                // সাউন্ড ইফেক্ট
+                if (audioUnlocked) {
+                    sound.currentTime = 0;
+                    sound.play().catch(e => {});
+                }
+                
                 i++;
                 chatBox.scrollTop = chatBox.scrollHeight;
-                setTimeout(type, 30);
+                setTimeout(type, 35); // টাইপিং স্পিড
             } else {
                 msgDiv.innerHTML += `<span class="time">${getCurrentTime()}</span>`;
             }
